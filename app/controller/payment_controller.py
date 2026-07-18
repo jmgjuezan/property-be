@@ -31,7 +31,7 @@ def create_payment(new_payment: PaymentSchema):
     return api_response(data=payment_json, message="Payment created successfully")
 
 
-@router.put("/payments/{payment_id}")
+@router.patch("/payments/{payment_id}")
 def change_payment(payment_id: str, payment: PaymentSchema):
     payment_json = payment.model_dump()
     update_payment(payment_id, payment_json)

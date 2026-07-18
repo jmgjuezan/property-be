@@ -27,7 +27,7 @@ def create_tenant(tenant: TenantSchema):
     tenant_json["_id"] = str(result.inserted_id)
     return api_response(data = tenant_json, message = "Tenant created successfully")
 
-@router.put("/tenants/{tenant_id}")
+@router.patch("/tenants/{tenant_id}")
 def change_tenant(tenant_id: str, tenant: TenantSchema):
     tenant_json = tenant.model_dump()
     update_tenant(tenant_id, tenant_json)

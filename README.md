@@ -35,15 +35,19 @@ property-be/\
 
 main.py - contains base REST APIs as well as import controllers
 
-Controller - contains REST APIs separated into models
+Controller - contains REST APIs separated into models, no business logic in this layer
 
-Model - database collection representations
+Model - database collection representations, data to pass to the database
 
-Schema - API body representations
+Schema - API body representations passed from UI
 
 DB - handles database connection
 
 Util - common code snippet or functions
+
+## Database structure
+
+See https://github.com/jmgjuezan/property-be/tree/master/app/db
 
 ## Create virtual environment
 ```python -m venv .venv```
@@ -64,7 +68,7 @@ Util - common code snippet or functions
 ```uvicorn app.main:app --reload```
 
 ## Local
-```http://127.0.0.1:8000```
+[http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ## Swagger UI
-```http://127.0.0.1:8000/docs```
+[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)

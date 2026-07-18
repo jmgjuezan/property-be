@@ -31,7 +31,7 @@ def create_due(new_due: DueSchema):
     return api_response(data=due_json, message="Due created successfully")
 
 
-@router.put("/dues/{due_id}")
+@router.patch("/dues/{due_id}")
 def change_due(due_id: str, due: DueSchema):
     due_json = due.model_dump()
     update_due(due_id, due_json)

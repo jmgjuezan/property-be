@@ -31,7 +31,7 @@ def create_exclusion(new_exclusion: ExclusionSchema):
     return api_response(data=exclusion_json, message="Exclusion created successfully")
 
 
-@router.put("/exclusions/{exclusion_id}")
+@router.patch("/exclusions/{exclusion_id}")
 def change_exclusion(exclusion_id: str, exclusion: ExclusionSchema):
     exclusion_json = exclusion.model_dump()
     update_exclusion(exclusion_id, exclusion_json)

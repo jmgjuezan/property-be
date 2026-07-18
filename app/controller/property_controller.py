@@ -31,9 +31,9 @@ def create_property(new_property: PropertySchema):
     return api_response(data=property_json, message="Property created successfully")
 
 
-@router.put("/properties/{property_id}")
-def change_property(property_id: str, property: PropertySchema):
-    property_json = property.model_dump()
+@router.patch("/properties/{property_id}")
+def change_property(property_id: str, updated_property: PropertySchema):
+    property_json = updated_property.model_dump()
     update_property(property_id, property_json)
     property_json["_id"] = property_id
     return api_response(data=property_json, message="Property changed successfully")
