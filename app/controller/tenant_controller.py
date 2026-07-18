@@ -16,7 +16,6 @@ def get_tenants():
 @router.get("/tenants/{tenant_id}")
 def get_tenant(tenant_id: str):
     tenant = read_tenant(tenant_id)
-    tenant["_id"] = str(tenant["_id"])
     message = "Tenant retrieved" if tenant else "No tenant found"
     return api_response(data = tenant, message = message)
 

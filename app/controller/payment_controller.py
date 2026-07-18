@@ -18,7 +18,6 @@ def get_payments():
 @router.get("/payments/{payment_id}")
 def get_payment(payment_id: str):
     payment_data = read_payment(payment_id)
-    payment_data["_id"] = str(payment_data["_id"])
     message = "Payment retrieved" if payment_data else "No payment found"
     return api_response(data=payment_data, message=message)
 

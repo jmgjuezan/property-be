@@ -18,7 +18,6 @@ def get_properties():
 @router.get("/properties/{property_id}")
 def get_property(property_id: str):
     property_data = read_property(property_id)
-    property_data["_id"] = str(property_data["_id"])
     message = "Property retrieved" if property_data else "No property found"
     return api_response(data=property_data, message=message)
 

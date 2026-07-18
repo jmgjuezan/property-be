@@ -1,7 +1,11 @@
-from typing import Optional
+from datetime import date
 from pydantic import BaseModel
 
 
 class PaymentSchema(BaseModel):
-    name: Optional[str] = None
+    paymentDate: date
+    amount: int
+    paymentFor: str
+    tenant: str
+    property: str
     

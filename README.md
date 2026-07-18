@@ -58,13 +58,16 @@ See https://github.com/jmgjuezan/property-be/tree/master/app/db
 ## Deactivate virtual environment
 ```deactivate```
 
-## Download and install packages
+## Download and install packages (Run inside active virtual environment)
 ```pip install -r requirements.txt```
 
-## Save packages (Run inside active virtual environment)
+## Force an upgrade and bypass any cached configurations
+```pip install --upgrade --force-reinstall -r requirements.txt```
+
+## Save or update packages (Run inside active virtual environment)
 ```pip freeze > requirements.txt```
 
-## Start the application
+## Start the application (Run inside active virtual environment)
 ```uvicorn app.main:app --reload```
 
 ## Local

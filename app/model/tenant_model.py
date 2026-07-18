@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from ..db.database import db
 
@@ -12,6 +12,9 @@ def read_tenants():
 def read_tenant(tenant_id: str):
     tenant_filter = {"_id": ObjectId(tenant_id)}
     tenant = collection.find_one(tenant_filter)
+    if tenant is None:
+        return None
+    tenant["_id"] = str(tenant["_id"])
     formatted_tenant = format_ui_date(tenant)
     return formatted_tenant
 
@@ -42,7 +45,7 @@ def format_ui_date(tenant):
 
 def format_db_fields(tenant):
     tenant = format_db_name(tenant)
-    tenant = format_db_dates(tenant)
+    tenant = format_db_date(tenant)
     clean_tenant = {k: v for k, v in tenant.items() if v is not None}
     return clean_tenant
 
@@ -55,7 +58,7 @@ def format_db_name(tenant):
     return tenant
 
 
-def format_db_dates(tenant):
+def format_db_date(tenant):
     tenant["moveInDate"] = datetime(
         tenant["moveInDate"].year,
         tenant["moveInDate"].month,
