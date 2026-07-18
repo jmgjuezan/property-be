@@ -4,9 +4,9 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
-CONNECTION_STRING: str = os.getenv("DATABASE_URL")
+CONNECTION_STRING: str = os.getenv("DATABASE_URL", "")
 
-DATABASE_NAME = "property"
+DATABASE_NAME = "prop-mgmt"
 
 try:
     client = pymongo.MongoClient(CONNECTION_STRING)

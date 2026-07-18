@@ -4,31 +4,46 @@ This is an API project that delivers the RESTful endpoints that power the [Prope
 ## Built using
 * Python
 * FastAPI
+* Pydantic
+* Uvicorn
 
 ## Installation
+Using HTTP
 ```git clone https://github.com/jmgjuezan/property-be.git```
 
 ## Project structure
-property-be/
-├── app/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── controller/
-│   │   ├── __init__.py
-│   │   └── (model)_controller.py
-│   ├── model/
-│   │   ├── __init__.py
-│   │   └── (name)_model.py
-│   ├── schema/
-│   │   ├── __init__.py
-│   │   └── (model)_schema.py
-│   ├── db/
-│   │   ├── __init__.py
-│   │   └── database.py
-│   └── util/
-│       ├── __init__.py
-│       └── response_wrapper.py
+property-be/\
+├── app/\
+│   ├── \_\_init\_\_.py\
+│   ├── main.py\
+│   ├── controller/\
+│   │   ├── \_\_init\_\_.py\
+│   │   └── (model)_controller.py\
+│   ├── model/\
+│   │   ├── \_\_init\_\_.py\
+│   │   └── (name)_model.py\
+│   ├── schema/\
+│   │   ├── \_\_init\_\_.py\
+│   │   └── (model)_schema.py\
+│   ├── db/\
+│   │   ├── \_\_init\_\_.py\
+│   │   └── database.py\
+│   └── util/\
+│       ├── \_\_init\_\_.py\
+│       └── response_wrapper.py\
 └── requirements.txt
+
+main.py - contains base REST APIs as well as import controllers
+
+Controller - contains REST APIs separated into models
+
+Model - database collection representations
+
+Schema - API body representations
+
+DB - handles database connection
+
+Util - common code snippet or functions
 
 ## Create virtual environment
 ```python -m venv .venv```
