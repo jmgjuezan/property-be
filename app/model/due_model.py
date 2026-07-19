@@ -9,6 +9,8 @@ def read_dues():
 
 
 def read_due(due_id: str):
+    if len(due_id) < 24:
+        return None
     due_filter = {"_id": ObjectId(due_id)}
     return collection.find_one(due_filter)
 

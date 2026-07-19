@@ -25,20 +25,32 @@ def get_property(property_id: str):
 @router.post("/properties", status_code=status.HTTP_201_CREATED)
 def create_property(new_property: PropertySchema):
     property_json = new_property.model_dump()
-    result = save_property(property_json)
-    property_json["_id"] = str(result.inserted_id)
-    return api_response(data=property_json, message="Property created successfully")
+    try:
+        result = save_property(property_json)
+        property_json["_id"] = str(result.inserted_id)
+        message = "Property created successfully"
+    except Exception:
+        message = "Failed to create property"
+    return api_response(data=property_json, message=message)
 
 
 @router.patch("/properties/{property_id}")
 def change_property(property_id: str, updated_property: PropertySchema):
     property_json = updated_property.model_dump()
-    update_property(property_id, property_json)
-    property_json["_id"] = property_id
-    return api_response(data=property_json, message="Property changed successfully")
+    try:
+        update_property(property_id, property_json)
+        property_json["_id"] = property_id
+        message = "Property changed successfully"
+    except Exception:
+        message = "Failed to change property"
+    return api_response(data=property_json, message=message)
 
 
 @router.delete("/properties/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_property(property_id: str):
-    delete_property(property_id)
-    return api_response(data=None, message="Property removed successfully")
+    try:
+        delete_property(property_id)
+        message = "Property removed successfully"
+    except Exception:
+        message = "Failed to remove property"
+    return api_response(data=None, message=message)

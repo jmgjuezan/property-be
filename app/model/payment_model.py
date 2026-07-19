@@ -10,6 +10,8 @@ def read_payments():
 
 
 def read_payment(payment_id: str):
+    if len(payment_id) < 24:
+        return None
     payment_filter = {"_id": ObjectId(payment_id)}
     payment = collection.find_one(payment_filter)
     if payment is None:

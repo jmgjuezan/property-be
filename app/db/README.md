@@ -14,7 +14,27 @@ This backend API is built initially connected to MongoDB Atlas, a no SQL type of
 
 - Dues - expected receivable from tenant
 - Exclusions - payment exception or deduction
+
+| Column            | Type |                            Constraints |
+|:------------------|:----:|---------------------------------------:|
+| _id               | str  |       Required, Auto-generated, Unique |
+| exclusionDate     | date |                               Optional |
+| exclusionDateFrom | date |                               Optional |
+| exclusionDateTo   | date |                               Optional |
+| name              | str  |     Required, Referenced to tenant _id |
+| property          | str  | Required, Referenced to properties _id |
+
 - Payments - paid by tenants
+
+| Column      | Type  |                            Constraints |
+|:------------|:-----:|---------------------------------------:|
+| _id         |  str  |       Required, Auto-generated, Unique |
+| paymentDate | date  |                               Required |
+| amount      | float |   Required, greater than or equal to 1 |
+| paymentFor  |  str  |                               Required |
+| tenant      |  str  |     Required, Referenced to tenant _id |
+| property    |  str  | Required, Referenced to properties _id |
+
 - Properties - rentable real estate
 
 | Column        | Type |                          Constraints |

@@ -10,6 +10,8 @@ def read_tenants():
 
 
 def read_tenant(tenant_id: str):
+    if len(tenant_id) < 24:
+        return None
     tenant_filter = {"_id": ObjectId(tenant_id)}
     tenant = collection.find_one(tenant_filter)
     if tenant is None:

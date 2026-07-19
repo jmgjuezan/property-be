@@ -11,6 +11,8 @@ def read_properties():
 
 
 def read_property(property_id: str):
+    if len(property_id) < 24:
+        return None
     property_filter = {"_id": ObjectId(property_id)}
     db_property = collection.find_one(property_filter)
     if db_property is None:

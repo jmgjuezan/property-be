@@ -10,6 +10,8 @@ def read_exclusions():
 
 
 def read_exclusion(exclusion_id: str):
+    if len(exclusion_id) < 24:
+        return None
     exclusion_filter = {"_id": ObjectId(exclusion_id)}
     exclusion = collection.find_one(exclusion_filter)
     if exclusion is None:
