@@ -18,7 +18,6 @@ def get_exclusions():
 @router.get("/exclusions/{exclusion_id}")
 def get_exclusion(exclusion_id: str):
     exclusion_data = read_exclusion(exclusion_id)
-    exclusion_data["_id"] = str(exclusion_data["_id"])
     message = "Exclusion retrieved" if exclusion_data else "No exclusion found"
     return api_response(data=exclusion_data, message=message)
 
