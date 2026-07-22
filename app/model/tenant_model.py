@@ -6,13 +6,13 @@ collection = db["tenants"]
 
 
 def read_tenants():
-    return collection.find()
+    return collection.find({"deleted": { "$exists": False }})
 
 
 def read_tenant(tenant_id: str):
     if len(tenant_id) < 24:
         return None
-    tenant_filter = {"_id": ObjectId(tenant_id)}
+    tenant_filter = {"_id": ObjectId(tenant_id), "deleted": { "$exists": False }}
     tenant = collection.find_one(tenant_filter)
     if tenant is None:
         return None
@@ -35,13 +35,16 @@ def update_tenant(tenant_id: str, tenant):
 
 def delete_tenant(tenant_id: str):
     tenant_filter = {"_id": ObjectId(tenant_id)}
-    return collection.find_one_and_delete(tenant_filter)
+    update = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(tenant_filter, update)
 
 
 def format_ui_date(tenant):
     tenant["moveInDate"] = tenant["moveInDate"].date()
     if tenant.get("paymentDate", None) is not None:
         tenant["paymentDate"] = tenant["paymentDate"].date()
+    if tenant.get("moveOutDate", None) is not None:
+        tenant["moveOutDate"] = tenant["moveOutDate"].date()
     return tenant
 
 
@@ -72,6 +75,13 @@ def format_db_date(tenant):
             tenant["paymentDate"].year,
             tenant["paymentDate"].month,
             tenant["paymentDate"].day,
+            tzinfo=timezone.utc
+        )
+    if tenant["moveOutDate"] is not None:
+        tenant["moveOutDate"] = datetime(
+            tenant["moveOutDate"].year,
+            tenant["moveOutDate"].month,
+            tenant["moveOutDate"].day,
             tzinfo=timezone.utc
         )
     return tenant

@@ -5,14 +5,23 @@ from ..db.database import db
 collection = db["payments"]
 
 
-def read_payments():
-    return collection.find()
+def read_payments(paid_by: str | None = None, property: str | None = None):
+    if paid_by is None and property is None:
+        return collection.find({"deleted": { "$exists": False }})
+    elif paid_by is None:
+        return collection.find({ "property": property, "deleted": { "$exists": False }})
+    elif property is None:
+        return collection.find({ "tenant": paid_by, "deleted": { "$exists": False }})
+    else:
+        return collection.find({
+            "tenant": paid_by, "property": property, "deleted": { "$exists": False }
+        })
 
 
 def read_payment(payment_id: str):
     if len(payment_id) < 24:
         return None
-    payment_filter = {"_id": ObjectId(payment_id)}
+    payment_filter = {"_id": ObjectId(payment_id), "deleted": { "$exists": False }}
     payment = collection.find_one(payment_filter)
     if payment is None:
         return None
@@ -35,7 +44,8 @@ def update_payment(payment_id: str, updated_payment):
 
 def delete_payment(payment_id: str):
     payment_filter = {"_id": ObjectId(payment_id)}
-    return collection.find_one_and_delete(payment_filter)
+    update = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(payment_filter, update)
 
 
 def format_ui_date(payment):

@@ -5,13 +5,13 @@ collection = db["dues"]
 
 
 def read_dues():
-    return collection.find()
+    return collection.find({"deleted": { "$exists": False }})
 
 
 def read_due(due_id: str):
     if len(due_id) < 24:
         return None
-    due_filter = {"_id": ObjectId(due_id)}
+    due_filter = {"_id": ObjectId(due_id), "deleted": { "$exists": False }}
     return collection.find_one(due_filter)
 
 
@@ -27,4 +27,5 @@ def update_due(due_id: str, updated_due):
 
 def delete_due(due_id: str):
     due_filter = {"_id": ObjectId(due_id)}
-    return collection.find_one_and_delete(due_filter)
+    update = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(due_filter, update)

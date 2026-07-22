@@ -7,8 +7,8 @@ router = APIRouter()
 
 
 @router.get("/payments")
-def get_payments():
-    payments = read_payments()
+def get_payments(paid_by: str | None = None, property: str | None = None):
+    payments = read_payments(paid_by, property)
     payment_list = list(payments)
     for payment_item in payment_list:
         payment_item["_id"] = str(payment_item["_id"])

@@ -10,3 +10,4 @@ class TenantSchema(BaseModel):
     moveInDate: date = Field(description="Rent Due Date")
     paymentDate: date | None = Field(default=None, description="Preferred Rent Due Date")
     rentAmount: int = Field(gt=0)
+    moveOutDate: date | None = Field(default=None)

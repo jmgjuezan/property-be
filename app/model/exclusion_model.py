@@ -6,13 +6,13 @@ collection = db["exclusions"]
 
 
 def read_exclusions():
-    return collection.find()
+    return collection.find({"deleted": { "$exists": False }})
 
 
 def read_exclusion(exclusion_id: str):
     if len(exclusion_id) < 24:
         return None
-    exclusion_filter = {"_id": ObjectId(exclusion_id)}
+    exclusion_filter = {"_id": ObjectId(exclusion_id), "deleted": { "$exists": False }}
     exclusion = collection.find_one(exclusion_filter)
     if exclusion is None:
         return None
@@ -35,7 +35,8 @@ def update_exclusion(exclusion_id: str, updated_exclusion):
 
 def delete_exclusion(exclusion_id: str):
     exclusion_filter = {"_id": ObjectId(exclusion_id)}
-    return collection.find_one_and_delete(exclusion_filter)
+    update = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(exclusion_filter, update)
 
 
 def format_ui_date(exclusion):

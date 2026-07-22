@@ -7,13 +7,13 @@ collection = db["properties"]
 
 
 def read_properties():
-    return collection.find().sort("name", pymongo.ASCENDING)
+    return collection.find({"deleted": { "$exists": False }}).sort("name", pymongo.ASCENDING)
 
 
 def read_property(property_id: str):
     if len(property_id) < 24:
         return None
-    property_filter = {"_id": ObjectId(property_id)}
+    property_filter = {"_id": ObjectId(property_id), "deleted": { "$exists": False }}
     db_property = collection.find_one(property_filter)
     if db_property is None:
         return None
@@ -36,7 +36,8 @@ def update_property(property_id: str, updated_property):
 
 def delete_property(property_id: str):
     property_filter = {"_id": ObjectId(property_id)}
-    return collection.find_one_and_delete(property_filter)
+    update = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(property_filter, update)
 
 
 def format_ui_date(raw_property):
