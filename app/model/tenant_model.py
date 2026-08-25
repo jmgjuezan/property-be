@@ -1,58 +1,88 @@
-from datetime import datetime, timezone
+import calendar
+import pymongo
 from bson.objectid import ObjectId
+from datetime import datetime
+from typing import Any
 from ..db.database import db
+from ..util.format_helper import format_db_fields, format_ui_field, format_ui_fields
 
-collection = db["tenants"]
-
-
-def read_tenants():
-    return collection.find({"deleted": { "$exists": False }})
-
-
-def read_tenant(tenant_id: str):
-    if len(tenant_id) < 24:
-        return None
-    tenant_filter = {"_id": ObjectId(tenant_id), "deleted": { "$exists": False }}
-    tenant = collection.find_one(tenant_filter)
-    if tenant is None:
-        return None
-    tenant["_id"] = str(tenant["_id"])
-    formatted_tenant = format_ui_date(tenant)
-    return formatted_tenant
+table = "tenants"
+collection = db[table]
+fields = ["moveInDate", "moveOutDate", "paymentDate"]
 
 
-def save_tenant(tenant):
-    formatted_tenant = format_db_fields(tenant)
-    return collection.insert_one(formatted_tenant)
+def find_all(
+    property: str | None = None,
+    move_in_year_month: str | None = None,
+    move_out_year_month: str | None = None,
+    move_out: bool | None = None
+):
+    where: dict[str, Any] = {"$and": [
+        {"$or": [
+            {"deleted": {"$exists": False}},
+            {"deleted": False}
+        ]}
+    ]}
+
+    if move_out is not None:
+        where["$and"].append({"moveOutDate": {"$exists": move_out}})
+    elif move_out_year_month is not None:
+        year_month = move_out_year_month.split("-")  # Expected YYYY-MM
+        year = int(year_month[0])
+        month = int(year_month[1])
+        move_out_date = datetime(year, month, 1, 0, 0, 0)
+        where["$and"].append({"$or": [
+            {"moveOutDate": {"$exists": False}},
+            {"moveOutDate": {"$gte": move_out_date}}
+        ]})
+    if property is not None:
+        where["$and"].append({"property": property})
+    if move_in_year_month is not None:
+        year_month = move_in_year_month.split("-")  # Expected YYYY-MM
+        year = int(year_month[0])
+        month = int(year_month[1])
+        _, last_day = calendar.monthrange(year, month)
+        move_in_date = datetime(year, month, 1, 0, 0, 0)
+        move_in_date.replace(day=last_day)
+        where["$and"].append({"moveInDate": {"$lte": move_in_date}})
+
+    tenants = collection.find(where).sort("firstName", pymongo.ASCENDING)
+    tenants = format_ui_fields(tenants, fields)
+    return tenants
 
 
-def update_tenant(tenant_id: str, tenant):
-    tenant_filter = {"_id": ObjectId(tenant_id)}
-    formatted_tenant = format_db_fields(tenant)
-    update = {"$set": formatted_tenant}
-    return collection.find_one_and_update(tenant_filter, update)
+def find_one(model_id: str):
+    query_filter = {
+        "_id": ObjectId(model_id),
+        "$or": [
+            {"deleted": {"$exists": False}},
+            {"deleted": False}
+        ]
+    }
+    results = collection.find_one(query_filter)
+    if results is not None:
+        results = format_ui_field(results, fields)
+    return results
 
 
-def delete_tenant(tenant_id: str):
-    tenant_filter = {"_id": ObjectId(tenant_id)}
-    update = {"$set": {"deleted": True}}
-    return collection.find_one_and_update(tenant_filter, update)
+def save(new_model):
+    result = format_db_name(new_model)
+    result = format_db_fields(result, fields)
+    return collection.insert_one(result)
 
 
-def format_ui_date(tenant):
-    tenant["moveInDate"] = tenant["moveInDate"].date()
-    if tenant.get("paymentDate", None) is not None:
-        tenant["paymentDate"] = tenant["paymentDate"].date()
-    if tenant.get("moveOutDate", None) is not None:
-        tenant["moveOutDate"] = tenant["moveOutDate"].date()
-    return tenant
+def update(model_id: str, updated_model):
+    query_filter = {"_id": ObjectId(model_id)}
+    result = format_db_name(updated_model)
+    result = format_db_fields(result, fields)
+    model = {"$set": result}
+    return collection.find_one_and_update(query_filter, model)
 
 
-def format_db_fields(tenant):
-    tenant = format_db_name(tenant)
-    tenant = format_db_date(tenant)
-    clean_tenant = {k: v for k, v in tenant.items() if v is not None}
-    return clean_tenant
+def delete(model_id: str):
+    query_filter = {"_id": ObjectId(model_id)}
+    model = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(query_filter, model)
 
 
 def format_db_name(tenant):
@@ -60,28 +90,6 @@ def format_db_name(tenant):
     if tenant["middleName"] is not None:
         tenant["middleName"] = tenant["middleName"].title()
     tenant["lastName"] = tenant["lastName"].title()
-    return tenant
-
-
-def format_db_date(tenant):
-    tenant["moveInDate"] = datetime(
-        tenant["moveInDate"].year,
-        tenant["moveInDate"].month,
-        tenant["moveInDate"].day,
-        tzinfo=timezone.utc
-    )
-    if tenant["paymentDate"] is not None:
-        tenant["paymentDate"] = datetime(
-            tenant["paymentDate"].year,
-            tenant["paymentDate"].month,
-            tenant["paymentDate"].day,
-            tzinfo=timezone.utc
-        )
-    if tenant["moveOutDate"] is not None:
-        tenant["moveOutDate"] = datetime(
-            tenant["moveOutDate"].year,
-            tenant["moveOutDate"].month,
-            tenant["moveOutDate"].day,
-            tzinfo=timezone.utc
-        )
+    if tenant["nickname"] is not None:
+        tenant["nickname"] = tenant["nickname"].title()
     return tenant

@@ -1,67 +1,60 @@
-from datetime import datetime, timezone
+import pymongo
 from bson.objectid import ObjectId
+from typing import Any
 from ..db.database import db
+from ..util.format_helper import format_db_fields, format_ui_field, format_ui_fields
 
-collection = db["payments"]
-
-
-def read_payments(paid_by: str | None = None, property: str | None = None):
-    if paid_by is None and property is None:
-        return collection.find({"deleted": { "$exists": False }})
-    elif paid_by is None:
-        return collection.find({ "property": property, "deleted": { "$exists": False }})
-    elif property is None:
-        return collection.find({ "tenant": paid_by, "deleted": { "$exists": False }})
-    else:
-        return collection.find({
-            "tenant": paid_by, "property": property, "deleted": { "$exists": False }
-        })
+table = "payments"
+collection = db[table]
+fields = ["paymentDate"]
 
 
-def read_payment(payment_id: str):
-    if len(payment_id) < 24:
-        return None
-    payment_filter = {"_id": ObjectId(payment_id), "deleted": { "$exists": False }}
-    payment = collection.find_one(payment_filter)
-    if payment is None:
-        return None
-    payment["_id"] = str(payment["_id"])
-    formatted_payment = format_ui_date(payment)
-    return formatted_payment
+def find_all(
+        paid_by: str | None = None,
+        property: str | None = None
+):
+    where: dict[str, Any] = {"$or": [
+        {"deleted": {"$exists": False}},
+        {"deleted": False}
+    ]}
+
+    if paid_by is not None:
+        where["tenant"] = paid_by
+    if property is not None:
+        where["property"] = property
+
+    results = collection.find(where).sort("paymentDate", pymongo.ASCENDING)
+    results = format_ui_fields(results, fields)
+    return results
 
 
-def save_payment(new_payment):
-    formatted_tenant = format_db_fields(new_payment)
-    return collection.insert_one(formatted_tenant)
+def find_one(model_id: str):
+    query_filter = {
+        "_id": ObjectId(model_id),
+        "$or": [
+            {"deleted": {"$exists": False}},
+            {"deleted": False}
+        ]
+    }
+    results = collection.find_one(query_filter)
+    if results is not None:
+        results = format_ui_field(results, fields)
+    return results
 
 
-def update_payment(payment_id: str, updated_payment):
-    payment_filter = {"_id": ObjectId(payment_id)}
-    formatted_payment = format_db_fields(updated_payment)
-    update = {"$set": formatted_payment}
-    return collection.find_one_and_update(payment_filter, update)
+def save(new_model):
+    result = format_db_fields(new_model, fields)
+    return collection.insert_one(result)
 
 
-def delete_payment(payment_id: str):
-    payment_filter = {"_id": ObjectId(payment_id)}
-    update = {"$set": {"deleted": True}}
-    return collection.find_one_and_update(payment_filter, update)
+def update(model_id: str, updated_model):
+    query_filter = {"_id": ObjectId(model_id)}
+    result = format_db_fields(updated_model, fields)
+    model = {"$set": result}
+    return collection.find_one_and_update(query_filter, model)
 
 
-def format_ui_date(payment):
-    payment["paymentDate"] = payment["paymentDate"].date()
-    return payment
-
-def format_db_fields(payment):
-    payment = format_db_date(payment)
-    clean_property = {k: v for k, v in payment.items() if v is not None}
-    return clean_property
-
-def format_db_date(payment):
-    payment["paymentDate"] = datetime(
-        payment["paymentDate"].year,
-        payment["paymentDate"].month,
-        payment["paymentDate"].day,
-        tzinfo=timezone.utc
-    )
-    return payment
+def delete(model_id: str):
+    query_filter = {"_id": ObjectId(model_id)}
+    model = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(query_filter, model)

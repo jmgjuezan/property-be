@@ -1,63 +1,51 @@
 import pymongo
-from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from ..db.database import db
+from ..util.format_helper import format_db_fields, format_ui_field, format_ui_fields
 
-collection = db["properties"]
-
-
-def read_properties():
-    return collection.find({"deleted": { "$exists": False }}).sort("name", pymongo.ASCENDING)
-
-
-def read_property(property_id: str):
-    if len(property_id) < 24:
-        return None
-    property_filter = {"_id": ObjectId(property_id), "deleted": { "$exists": False }}
-    db_property = collection.find_one(property_filter)
-    if db_property is None:
-        return None
-    db_property["_id"] = str(db_property["_id"])
-    formatted_property = format_ui_date(db_property)
-    return formatted_property
+table = "properties"
+collection = db[table]
+fields = ["acquiredDate"]
 
 
-def save_property(new_property):
-    formatted_property = format_db_fields(new_property)
-    return collection.insert_one(formatted_property)
+def find_all():
+    results = collection.find({
+        "$or": [
+            {"deleted": { "$exists": False }},
+            {"deleted": False}
+        ]
+    }).sort("name", pymongo.ASCENDING)
+    results = format_ui_fields(results, fields)
+    return results
 
 
-def update_property(property_id: str, updated_property):
-    property_filter = {"_id": ObjectId(property_id)}
-    formatted_property = format_db_fields(updated_property)
-    update = {"$set": formatted_property}
-    return collection.find_one_and_update(property_filter, update)
+def find_one(model_id: str):
+    query_filter = {
+        "_id": ObjectId(model_id),
+        "$or": [
+            {"deleted": { "$exists": False }},
+            {"deleted": False}
+        ]
+    }
+    results = collection.find_one(query_filter)
+    if results is not None:
+        results = format_ui_field(results, fields)
+    return results
 
 
-def delete_property(property_id: str):
-    property_filter = {"_id": ObjectId(property_id)}
-    update = {"$set": {"deleted": True}}
-    return collection.find_one_and_update(property_filter, update)
+def save(new_model):
+    result = format_db_fields(new_model, fields)
+    return collection.insert_one(result)
 
 
-def format_ui_date(raw_property):
-    if raw_property.get("acquiredDate", None) is not None:
-        raw_property["acquiredDate"] = raw_property["acquiredDate"].date()
-    return raw_property
+def update(model_id: str, updated_model):
+    query_filter = {"_id": ObjectId(model_id)}
+    result = format_db_fields(updated_model, fields)
+    model = {"$set": result}
+    return collection.find_one_and_update(query_filter, model)
 
 
-def format_db_fields(raw_property):
-    raw_property = format_db_date(raw_property)
-    clean_property = {k: v for k, v in raw_property.items() if v is not None}
-    return clean_property
-
-
-def format_db_date(raw_property):
-    if raw_property["acquiredDate"] is not None:
-        raw_property["acquiredDate"] = datetime(
-            raw_property["acquiredDate"].year,
-            raw_property["acquiredDate"].month,
-            raw_property["acquiredDate"].day,
-            tzinfo=timezone.utc
-        )
-    return raw_property
+def delete(model_id: str):
+    query_filter = {"_id": ObjectId(model_id)}
+    model = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(query_filter, model)

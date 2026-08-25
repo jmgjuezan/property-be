@@ -1,80 +1,82 @@
-from datetime import datetime, timezone
 from bson.objectid import ObjectId
+from datetime import date, datetime
+from typing import Any
 from ..db.database import db
+from ..util.format_helper import format_db_fields, format_ui_field, format_ui_fields
 
-collection = db["exclusions"]
-
-
-def read_exclusions():
-    return collection.find({"deleted": { "$exists": False }})
-
-
-def read_exclusion(exclusion_id: str):
-    if len(exclusion_id) < 24:
-        return None
-    exclusion_filter = {"_id": ObjectId(exclusion_id), "deleted": { "$exists": False }}
-    exclusion = collection.find_one(exclusion_filter)
-    if exclusion is None:
-        return None
-    exclusion["_id"] = str(exclusion["_id"])
-    formatted_exclusion = format_ui_date(exclusion)
-    return formatted_exclusion
+table = "exclusions"
+collection = db[table]
+fields = ["exclusionDate", "exclusionDateFrom", "exclusionDateTo"]
 
 
-def save_exclusion(new_exclusion):
-    formatted_exclusion = format_db_fields(new_exclusion)
-    return collection.insert_one(formatted_exclusion)
+def find_all(
+        name: str | None = None,
+        property: str | None = None,
+        from_date: date | None = None,
+        to_date: date | None = None
+):
+    where: dict[str, Any] = {"$and": [
+        {"$or": [
+            {"deleted": {"$exists": False}},
+            {"deleted": False}
+        ]}
+    ]}
 
-
-def update_exclusion(exclusion_id: str, updated_exclusion):
-    exclusion_filter = {"_id": ObjectId(exclusion_id)}
-    formatted_exclusion = format_db_fields(updated_exclusion)
-    update = {"$set": formatted_exclusion}
-    return collection.find_one_and_update(exclusion_filter, update)
-
-
-def delete_exclusion(exclusion_id: str):
-    exclusion_filter = {"_id": ObjectId(exclusion_id)}
-    update = {"$set": {"deleted": True}}
-    return collection.find_one_and_update(exclusion_filter, update)
-
-
-def format_ui_date(exclusion):
-    if exclusion.get("exclusionDate", None) is not None:
-        exclusion["exclusionDate"] = exclusion["exclusionDate"].date()
-    if exclusion.get("exclusionDateFrom", None) is not None:
-        exclusion["exclusionDateFrom"] = exclusion["exclusionDateFrom"].date()
-    if exclusion.get("exclusionDateTo", None) is not None:
-        exclusion["exclusionDateTo"] = exclusion["exclusionDateTo"].date()
-    return exclusion
-
-
-def format_db_fields(exclusion):
-    exclusion = format_db_date(exclusion)
-    clean_property = {k: v for k, v in exclusion.items() if v is not None}
-    return clean_property
-
-
-def format_db_date(exclusion):
-    if exclusion["exclusionDate"] is not None:
-        exclusion["exclusionDate"] = datetime(
-            exclusion["exclusionDate"].year,
-            exclusion["exclusionDate"].month,
-            exclusion["exclusionDate"].day,
-            tzinfo=timezone.utc
+    if property is not None:
+        where["$and"].append({"property": property})
+    if name is not None:
+        where["$and"].append({"name": name})
+    if from_date is not None and to_date is not None:
+        from_datetime = datetime(
+            from_date.year,
+            from_date.month,
+            from_date.day,
+            0, 0, 0
         )
-    if exclusion["exclusionDateFrom"] is not None:
-        exclusion["exclusionDateFrom"] = datetime(
-            exclusion["exclusionDateFrom"].year,
-            exclusion["exclusionDateFrom"].month,
-            exclusion["exclusionDateFrom"].day,
-            tzinfo=timezone.utc
-        )
-    if exclusion["exclusionDateTo"] is not None:
-        exclusion["exclusionDateTo"] = datetime(
-            exclusion["exclusionDateTo"].year,
-            exclusion["exclusionDateTo"].month,
-            exclusion["exclusionDateTo"].day,
-            tzinfo=timezone.utc
-        )
-    return exclusion
+        to_datetime = datetime(
+            to_date.year,
+            to_date.month,
+            to_date.day,
+            0, 0, 0)
+        where["$and"].append({"$or": [
+            {"exclusionDateFrom": {"$gte": from_datetime}},
+            {"exclusionDateFrom": {"$lte": to_datetime}},
+            {"exclusionDate": from_datetime},
+            {"exclusionDate": to_datetime}
+        ]})
+
+    results = collection.find(where)
+    results = format_ui_fields(results, fields)
+    return results
+
+
+def find_one(model_id: str):
+    query_filter = {
+        "_id": ObjectId(model_id),
+        "$or": [
+            {"deleted": {"$exists": False}},
+            {"deleted": False}
+        ]
+    }
+    results = collection.find_one(query_filter)
+    if results is not None:
+        results = format_ui_field(results, fields)
+    return results
+
+
+def save(new_model):
+    result = format_db_fields(new_model, fields)
+    return collection.insert_one(result)
+
+
+def update(model_id: str, updated_model):
+    query_filter = {"_id": ObjectId(model_id)}
+    result = format_db_fields(updated_model, fields)
+    model = {"$set": result}
+    return collection.find_one_and_update(query_filter, model)
+
+
+def delete(model_id: str):
+    query_filter = {"_id": ObjectId(model_id)}
+    model = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(query_filter, model)

@@ -1,39 +1,68 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Query
+from typing import Annotated
+import app.model.tenant_model as repository
 from ..util.response_wrapper import api_response
-from ..model.tenant_model import save_tenant, read_tenants, read_tenant, update_tenant, delete_tenant
 from ..schema.tenant_schema import TenantSchema
 
 router = APIRouter()
 
+
 @router.get("/tenants")
-def get_tenants():
-    tenants = read_tenants()
-    tenant_list = list(tenants)
-    for tenant in tenant_list:
-        tenant["_id"] = str(tenant["_id"])
-    return api_response(data = tenant_list, message = "All tenants retrieved")
+def find_all(
+        property: Annotated[
+            str | None,
+            Query(description="Property ID", examples=["6a5b350a213d15cadefcd749"])
+        ] = None,
+        move_in_year_month: Annotated[
+            str | None,
+            Query(description="YYYY-MM", examples=["2026-04"])
+        ] = None,
+        move_out_year_month: Annotated[
+            str | None,
+            Query(description="YYYY-MM", examples=["2026-04"])
+        ] = None,
+        move_out: Annotated[
+            bool | None,
+            Query(description="Move out flag", examples=["true"])
+        ] = None,
+):
+    results = repository.find_all(
+        property,
+        move_in_year_month,
+        move_out_year_month,
+        move_out
+    )
+    message = "Tenant found" if len(results) > 0 else "No tenant found"
+    return api_response(data=results, message=message)
+
 
 @router.get("/tenants/{tenant_id}")
-def get_tenant(tenant_id: str):
-    tenant = read_tenant(tenant_id)
-    message = "Tenant retrieved" if tenant else "No tenant found"
-    return api_response(data = tenant, message = message)
+def find_one(tenant_id: str):
+    if len(tenant_id) < 24:
+        return api_response(data=None, message="No tenant found")
 
-@router.post("/tenants", status_code = status.HTTP_201_CREATED)
-def create_tenant(tenant: TenantSchema):
-    tenant_json = tenant.model_dump()
-    result = save_tenant(tenant_json)
-    tenant_json["_id"] = str(result.inserted_id)
-    return api_response(data = tenant_json, message = "Tenant created successfully")
+    result = repository.find_one(tenant_id)
+    message = "Tenant found" if result else "No tenant found"
+    return api_response(data=result, message=message)
+
+
+@router.post("/tenants", status_code=status.HTTP_201_CREATED)
+def save(tenant: TenantSchema):
+    json = tenant.model_dump()
+    result = repository.save(json)
+    json["_id"] = str(result.inserted_id)
+    return api_response(data=json, message="Tenant saved successfully")
+
 
 @router.patch("/tenants/{tenant_id}")
-def change_tenant(tenant_id: str, tenant: TenantSchema):
-    tenant_json = tenant.model_dump()
-    update_tenant(tenant_id, tenant_json)
-    tenant_json["_id"] = tenant_id
-    return api_response(data = tenant_json, message = "Tenant changed successfully")
+def update(tenant_id: str, tenant: TenantSchema):
+    json = tenant.model_dump()
+    repository.update(tenant_id, json)
+    json["_id"] = tenant_id
+    return api_response(data=json, message="Tenant updated successfully")
 
-@router.delete("/tenants/{tenant_id}", status_code = status.HTTP_204_NO_CONTENT)
-def remove_tenant(tenant_id: str):
-    delete_tenant(tenant_id)
-    return api_response(data = None, message = "Tenant removed successfully")
+
+@router.delete("/tenants/{tenant_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete(tenant_id: str):
+    repository.delete(tenant_id)
+    return api_response(data=None, message="Tenant deleted successfully")

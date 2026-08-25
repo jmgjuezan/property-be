@@ -11,6 +11,9 @@ This is an API project that delivers the RESTful endpoints that power the [Prope
 Using HTTP
 ```git clone https://github.com/jmgjuezan/property-be.git```
 
+## Config
+Create a copy of .env-template, name it .env then supply the values
+
 ## Project structure
 property-be/\
 ├── app/\

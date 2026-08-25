@@ -1,45 +1,45 @@
 from fastapi import APIRouter, status
+import app.model.due_model as repository
 from ..util.response_wrapper import api_response
-from ..model.due_model import save_due, read_dues, read_due, update_due, delete_due
 from ..schema.due_schema import DueSchema
 
 router = APIRouter()
 
 
 @router.get("/dues")
-def get_dues():
-    dues = read_dues()
-    due_list = list(dues)
-    for due_item in due_list:
-        due_item["_id"] = str(due_item["_id"])
-    return api_response(data=due_list, message="All dues retrieved")
+def find_all():
+    results = repository.find_all()
+    message = "Due found" if len(results) > 0 else "No due found"
+    return api_response(data=results, message=message)
 
 
 @router.get("/dues/{due_id}")
-def get_due(due_id: str):
-    due_data = read_due(due_id)
-    due_data["_id"] = str(due_data["_id"])
-    message = "Due retrieved" if due_data else "No due found"
-    return api_response(data=due_data, message=message)
+def find_one(due_id: str):
+    if len(due_id) < 24:
+        return api_response(data=None, message="No due found")
+
+    result = repository.find_one(due_id)
+    message = "Due found" if result else "No due found"
+    return api_response(data=result, message=message)
 
 
 @router.post("/dues", status_code=status.HTTP_201_CREATED)
-def create_due(new_due: DueSchema):
-    due_json = new_due.model_dump()
-    result = save_due(due_json)
-    due_json["_id"] = str(result.inserted_id)
-    return api_response(data=due_json, message="Due created successfully")
+def save(new_due: DueSchema):
+    json = new_due.model_dump()
+    result = repository.save(json)
+    json["_id"] = str(result.inserted_id)
+    return api_response(data=json, message="Due saved successfully")
 
 
 @router.patch("/dues/{due_id}")
-def change_due(due_id: str, due: DueSchema):
-    due_json = due.model_dump()
-    update_due(due_id, due_json)
-    due_json["_id"] = due_id
-    return api_response(data=due_json, message="Due changed successfully")
+def update(due_id: str, due: DueSchema):
+    json = due.model_dump()
+    repository.update(due_id, json)
+    json["_id"] = due_id
+    return api_response(data=json, message="Due updated successfully")
 
 
 @router.delete("/dues/{due_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove_due(due_id: str):
-    delete_due(due_id)
-    return api_response(data=None, message="Due removed successfully")
+def delete(due_id: str):
+    repository.delete(due_id)
+    return api_response(data=None, message="Due deleted successfully")

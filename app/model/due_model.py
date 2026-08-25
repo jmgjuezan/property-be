@@ -1,31 +1,59 @@
+import pymongo
 from bson.objectid import ObjectId
 from ..db.database import db
+from ..util.format_helper import format_db_fields, format_ui_field, format_ui_fields
 
-collection = db["dues"]
-
-
-def read_dues():
-    return collection.find({"deleted": { "$exists": False }})
-
-
-def read_due(due_id: str):
-    if len(due_id) < 24:
-        return None
-    due_filter = {"_id": ObjectId(due_id), "deleted": { "$exists": False }}
-    return collection.find_one(due_filter)
-
-
-def save_due(new_due):
-    return collection.insert_one(new_due)
+table = "dues"
+collection = db[table]
+fields = [
+    "dueDate",
+    "coverageFromDate",
+    "coverageToDate",
+    "electricityFromDate",
+    "electricityToDate",
+    "waterFromDate",
+    "waterToDate",
+]
 
 
-def update_due(due_id: str, updated_due):
-    due_filter = {"_id": ObjectId(due_id)}
-    update = {"$set": updated_due}
-    return collection.find_one_and_update(due_filter, update)
+def find_all():
+    results = collection.find({
+        "$or": [
+            {"deleted": {"$exists": False}},
+            {"deleted": False}
+        ]
+    }).sort("dueDate", pymongo.ASCENDING)
+    results = format_ui_fields(results, fields)
+    return results
 
 
-def delete_due(due_id: str):
-    due_filter = {"_id": ObjectId(due_id)}
-    update = {"$set": {"deleted": True}}
-    return collection.find_one_and_update(due_filter, update)
+def find_one(model_id: str):
+    query_filter = {
+        "_id": ObjectId(model_id),
+        "$or": [
+            {"deleted": {"$exists": False}},
+            {"deleted": False}
+        ]
+    }
+    results = collection.find_one(query_filter)
+    if results is not None:
+        results = format_ui_field(results, fields)
+    return results
+
+
+def save(new_model):
+    result = format_db_fields(new_model, fields)
+    return collection.insert_one(result)
+
+
+def update(model_id: str, updated_model):
+    query_filter = {"_id": ObjectId(model_id)}
+    result = format_db_fields(updated_model, fields)
+    model = {"$set": result}
+    return collection.find_one_and_update(query_filter, model)
+
+
+def delete(model_id: str):
+    query_filter = {"_id": ObjectId(model_id)}
+    model = {"$set": {"deleted": True}}
+    return collection.find_one_and_update(query_filter, model)
