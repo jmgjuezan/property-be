@@ -78,3 +78,7 @@ See https://github.com/jmgjuezan/property-be/tree/master/app/db
 
 ## Swagger UI
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+## References
+Password Hash - https://bcrypt-generator.com/
+JWT - https://www.jwt.io/

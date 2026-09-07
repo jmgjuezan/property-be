@@ -1,9 +1,9 @@
+from .breakdown_schema import Breakdown
 from datetime import date
 from pydantic import BaseModel, Field
-from .breakdown_schema import BreakdownSchema
 
 
-class DueSchema(BaseModel):
+class Due(BaseModel):
     name: str | None = Field(description="Tenant Name", default=None)
     property: str
     totalAmount: float = Field(gt=0)
@@ -18,5 +18,5 @@ class DueSchema(BaseModel):
     water: float | None = Field(default=None)
     waterFromDate: date | None = Field(default=None)
     waterToDate: date | None = Field(default=None)
-    breakdown: list[BreakdownSchema] | None = Field(default=None)
+    breakdown: list[Breakdown] | None = Field(default=None)
     

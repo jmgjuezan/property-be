@@ -1,18 +1,31 @@
-from fastapi import APIRouter, status
 import app.model.exclusion_model as repository
 from datetime import date
+from fastapi import APIRouter, Depends, status
+from ..schema.exclusion_schema import Exclusion
+from ..schema.user_schema import User
+from .security_controller import get_current_user
+from typing import Annotated
 from ..util.response_wrapper import api_response
-from ..schema.exclusion_schema import ExclusionSchema
 
 router = APIRouter()
 
 
+@router.delete("/exclusions/{exclusion_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete(
+    _current_user: Annotated[User, Depends(get_current_user)],
+    exclusion_id: str
+):
+    repository.delete(exclusion_id)
+    return api_response(data=None, message="Exclusion deleted successfully")
+
+
 @router.get("/exclusions")
 def find_all(
-        name: str | None = None,
-        property: str | None = None,
-        from_date: date | None = None,
-        to_date: date | None = None
+    _current_user: Annotated[User, Depends(get_current_user)],
+    name: str | None = None,
+    property: str | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None
 ):
     results = repository.find_all(name, property, from_date, to_date)
     message = "Exclusion found" if len(results) > 0 else "No exclusion found"
@@ -20,7 +33,10 @@ def find_all(
 
 
 @router.get("/exclusions/{exclusion_id}")
-def find_one(exclusion_id: str):
+def find_one(
+    _current_user: Annotated[User, Depends(get_current_user)],
+    exclusion_id: str
+):
     if len(exclusion_id) < 24:
         return api_response(data=None, message="No exclusion found")
 
@@ -30,7 +46,10 @@ def find_one(exclusion_id: str):
 
 
 @router.post("/exclusions", status_code=status.HTTP_201_CREATED)
-def save(new_exclusion: ExclusionSchema):
+def save(
+    _current_user: Annotated[User, Depends(get_current_user)],
+    new_exclusion: Exclusion
+):
     json = new_exclusion.model_dump()
     result = repository.save(json)
     json["_id"] = str(result.inserted_id)
@@ -38,14 +57,12 @@ def save(new_exclusion: ExclusionSchema):
 
 
 @router.patch("/exclusions/{exclusion_id}")
-def update(exclusion_id: str, exclusion: ExclusionSchema):
+def update(
+    _current_user: Annotated[User, Depends(get_current_user)],
+    exclusion_id: str,
+    exclusion: Exclusion
+):
     json = exclusion.model_dump()
     repository.update(exclusion_id, json)
     json["_id"] = exclusion_id
     return api_response(data=json, message="Exclusion updated successfully")
-
-
-@router.delete("/exclusions/{exclusion_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete(exclusion_id: str):
-    repository.delete(exclusion_id)
-    return api_response(data=None, message="Exclusion deleted successfully")

@@ -35,10 +35,10 @@ def find_one(model_id: str):
             {"deleted": False}
         ]
     }
-    results = collection.find_one(query_filter)
-    if results is not None:
-        results = format_ui_field(results, fields)
-    return results
+    result = collection.find_one(query_filter)
+    if result is not None:
+        result = format_ui_field(result, fields)
+    return result
 
 
 def save(new_model):

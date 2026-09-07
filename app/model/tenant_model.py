@@ -43,7 +43,7 @@ def find_all(
         month = int(year_month[1])
         _, last_day = calendar.monthrange(year, month)
         move_in_date = datetime(year, month, 1, 0, 0, 0)
-        move_in_date.replace(day=last_day)
+        move_in_date = move_in_date.replace(day=last_day)
         where["$and"].append({"moveInDate": {"$lte": move_in_date}})
 
     tenants = collection.find(where).sort("firstName", pymongo.ASCENDING)
@@ -59,10 +59,10 @@ def find_one(model_id: str):
             {"deleted": False}
         ]
     }
-    results = collection.find_one(query_filter)
-    if results is not None:
-        results = format_ui_field(results, fields)
-    return results
+    result = collection.find_one(query_filter)
+    if result is not None:
+        result = format_ui_field(result, fields)
+    return result
 
 
 def save(new_model):
