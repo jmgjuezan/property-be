@@ -34,7 +34,7 @@ async def custom_404_handler(_, __):
     return RedirectResponse(url="/docs")
 
 
-@app.get("api/health")
+@app.get("/api/health")
 async def health():
     return "ok"
 

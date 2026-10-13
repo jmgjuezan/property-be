@@ -81,4 +81,5 @@ See https://github.com/jmgjuezan/property-be/tree/master/app/db
 
 ## References
 Password Hash - https://bcrypt-generator.com/
+
 JWT - https://www.jwt.io/
